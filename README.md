@@ -10,7 +10,6 @@ Software dan tools yang dipakai :
 4. Node JS LTS : https://nodejs.org/en/
 5. ESP32 Board: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 6. Wokwi Simulation : https://wokwi.com/
-7. Driver ESP8266 : https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers
 
 Library yang akan digunakan :
 -----------------------
