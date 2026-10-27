@@ -18,7 +18,7 @@ const char* ap_password = "12345678";  // minimal 8 karakter
 IPAddress ap_ip(192, 168, 3, 1);
 IPAddress ap_mask(255, 255, 255, 0);
 
-const int dhtPin = 15;
+const int dhtPin = 5;
 const int ledPin = 4;
 const int sdaPin = 7;
 const int sclPin = 17;

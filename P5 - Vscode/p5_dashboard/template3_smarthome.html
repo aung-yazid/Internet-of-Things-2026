@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rumah Kita</title>
+    <style>
+      :root {
+        --bg: #101812;
+        --tile: #1a251d;
+        --cream: #f2ebda;
+        --muted: #8a9d8f;
+        --coral: #ff8f6b;
+        --amber: #f6c76f;
+        --water: #5fb8a5;
+        --serif:
+          "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        --sans: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 36px 20px;
+        color: var(--cream);
+        font-family: var(--sans);
+        background: radial-gradient(
+          ellipse at 15% 0%,
+          #1d2b21 0%,
+          var(--bg) 55%
+        );
+      }
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+      }
+      .hello h1 {
+        font: 400 clamp(2rem, 5vw, 3.1rem)/1.1 var(--serif);
+        margin: 0;
+        letter-spacing: -0.02em;
+      }
+      .hello h1 em {
+        color: var(--coral);
+      }
+      .hello p {
+        margin: 10px 0 28px;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .bento {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(4, 1fr);
+        grid-auto-rows: 190px;
+        grid-template-areas: "temp temp hum lamp" "temp temp note lamp";
+      }
+      @media (max-width: 720px) {
+        .bento {
+          grid-template-columns: 1fr 1fr;
+          grid-template-areas: "temp temp" "hum lamp" "note note";
+        }
+      }
+      .tile {
+        position: relative;
+        overflow: hidden;
+        background: var(--tile);
+        border: 0;
+        border-radius: 28px;
+        padding: 22px;
+        color: inherit;
+        text-align: left;
+        font: inherit;
+      }
+      .label {
+        font-size: 0.7rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--muted);
+        position: relative;
+        z-index: 1;
+      }
+      .big {
+        font: 400 3rem/1 var(--serif);
+        position: relative;
+        z-index: 1;
+      }
+      .big small {
+        font-size: 1.1rem;
+        color: var(--muted);
+        margin-left: 3px;
+      }
+
+      /* Suhu */
+      .temp {
+        grid-area: temp;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .temp .label {
+        align-self: flex-start;
+      }
+      .temp svg {
+        width: 100%;
+        max-width: 330px;
+        margin-top: 10px;
+      }
+      #arc {
+        transition: stroke-dashoffset 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .temp .big {
+        font-size: 3.6rem;
+        margin-top: -58px;
+      }
+
+      /* Kelembapan: tile terisi air */
+      .hum {
+        grid-area: hum;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .water {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 0;
+        background: rgba(95, 184, 165, 0.28);
+        transition: height 1s ease;
+      }
+      .water::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -11px;
+        height: 12px;
+        background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 12' preserveAspectRatio='none'><path d='M0 6 Q20 0 40 6 T80 6 V12 H0Z' fill='%235fb8a5' fill-opacity='.28'/></svg>")
+          repeat-x;
+        background-size: 80px 12px;
+        animation: wave 5s linear infinite;
+      }
+      @keyframes wave {
+        to {
+          background-position-x: 80px;
+        }
+      }
+
+      /* Lampu: seluruh tile menyala */
+      .lamp {
+        grid-area: lamp;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition:
+          background 0.5s,
+          color 0.5s,
+          box-shadow 0.5s;
+      }
+      .lamp svg {
+        width: 54px;
+        height: 54px;
+        stroke: var(--muted);
+        fill: none;
+        stroke-width: 1.6;
+        transition: stroke 0.4s;
+      }
+      .lamp .state {
+        font: 400 1.9rem/1.1 var(--serif);
+      }
+      .lamp .hint {
+        font-size: 0.78rem;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .lamp.on {
+        background: linear-gradient(160deg, var(--amber), #e9a54a);
+        color: #2a1d08;
+        box-shadow: 0 0 60px rgba(246, 199, 111, 0.28);
+      }
+      .lamp.on svg {
+        stroke: #2a1d08;
+        fill: rgba(255, 255, 255, 0.35);
+      }
+      .lamp.on .label,
+      .lamp.on .hint {
+        color: rgba(42, 29, 8, 0.7);
+      }
+
+      /* Catatan waktu */
+      .note {
+        grid-area: note;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: transparent;
+        border: 1px solid #2a382e;
+      }
+      .note .big {
+        font-size: 2.3rem;
+      }
+      .note p {
+        margin: 0;
+        font: italic 1rem/1.35 var(--serif);
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hello">
+        <h1 id="greet">Selamat datang <em>di rumah</em></h1>
+        <p id="status">Menghubungkan...</p>
+      </div>
+
+      <div class="bento">
+        <section class="tile temp" id="cardTemp">
+          <div class="label">Suhu ruangan</div>
+          <svg viewBox="0 0 200 112">
+            <defs>
+              <linearGradient id="g" x1="0" x2="1">
+                <stop offset="0" stop-color="#5fb8a5" />
+                <stop offset="1" stop-color="#ff8f6b" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M20 100 A80 80 0 0 1 180 100"
+              fill="none"
+              stroke="#243329"
+              stroke-width="14"
+              stroke-linecap="round"
+            />
+            <path
+              id="arc"
+              d="M20 100 A80 80 0 0 1 180 100"
+              fill="none"
+              stroke="url(#g)"
+              stroke-width="14"
+              stroke-linecap="round"
+              stroke-dasharray="251.3"
+              stroke-dashoffset="251.3"
+            />
+          </svg>
+          <div class="big"><span id="temp">--</span><small>°C</small></div>
+        </section>
+
+        <section class="tile hum">
+          <div class="water" id="water"></div>
+          <div class="label">Kelembapan</div>
+          <div class="big"><span id="hum">--</span><small>%</small></div>
+        </section>
+
+        <button class="tile lamp" id="btnLed" onclick="toggleLed()">
+          <div>
+            <div class="label">Lampu</div>
+          </div>
+          <svg
+            viewBox="0 0 48 48"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M24 5a12 12 0 0 0-6.5 22c1.3.9 2 2.2 2 3.7V33h9v-2.3c0-1.5.7-2.8 2-3.7A12 12 0 0 0 24 5z"
+            />
+            <path d="M19.5 38h9M21 42h6" />
+          </svg>
+          <div>
+            <div class="state" id="ledText">--</div>
+            <div class="hint" id="hint">Ketuk untuk mengubah</div>
+          </div>
+        </button>
+
+        <section class="tile note">
+          <div class="label">Saat ini</div>
+          <div class="big" id="clock">--:--</div>
+          <p id="comfort">Menunggu data sensor.</p>
+        </section>
+      </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+      let ledOn = false;
+      const $ = (id) => document.getElementById(id);
+      const TEMP_MIN = 0,
+        TEMP_MAX = 50; // rentang gauge
+      const ARC = 251.3; // panjang busur setengah lingkaran
+
+      // Sapaan dan jam
+      function tickClock() {
+        const now = new Date(),
+          h = now.getHours();
+        const sapa =
+          h < 11
+            ? "Selamat pagi"
+            : h < 15
+              ? "Selamat siang"
+              : h < 18
+                ? "Selamat sore"
+                : "Selamat malam";
+        $("greet").innerHTML = sapa + " <em>di rumah</em>";
+        $("clock").textContent = now.toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      tickClock();
+      setInterval(tickClock, 15000);
+
+      async function getSensor() {
+        try {
+          const res = await fetch(API_BASE + "/api/sensor");
+          const data = await res.json();
+          showData(data);
+          $("status").textContent =
+            "Terhubung, diperbarui " + new Date().toLocaleTimeString("id-ID");
+        } catch (err) {
+          console.error(err);
+          $("status").textContent =
+            "Terputus. Cek IP di config.js dan Console (F12).";
+        }
+      }
+
+      async function setLed(state) {
+        try {
+          const res = await fetch(API_BASE + "/api/led?state=" + state);
+          const data = await res.json();
+          showData({ led: data.led });
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      function toggleLed() {
+        setLed(ledOn ? 0 : 1);
+      }
+
+      function showData(d) {
+        if (d.temp !== undefined) {
+          $("temp").textContent = d.temp ?? "--";
+          if (d.temp !== null) {
+            const pct = Math.min(
+              Math.max((d.temp - TEMP_MIN) / (TEMP_MAX - TEMP_MIN), 0),
+              1,
+            );
+            $("arc").style.strokeDashoffset = ARC * (1 - pct);
+            $("comfort").textContent =
+              d.temp < 25
+                ? "Udara sejuk, nyaman untuk beristirahat."
+                : d.temp < 30
+                  ? "Hangat, masih terasa nyaman."
+                  : "Ruangan terasa panas.";
+          }
+        }
+        if (d.hum !== undefined) {
+          $("hum").textContent = d.hum ?? "--";
+          $("water").style.height = (d.hum ?? 0) + "%";
+        }
+        if (d.led !== undefined) {
+          ledOn = d.led === 1;
+          $("btnLed").classList.toggle("on", ledOn);
+          $("ledText").textContent = ledOn ? "Menyala" : "Padam";
+          $("hint").textContent = ledOn
+            ? "Ketuk untuk memadamkan"
+            : "Ketuk untuk menyalakan";
+        }
+      }
+
+      getSensor();
+      setInterval(getSensor, POLL_INTERVAL);
+    </script>
+  </body>
+</html>

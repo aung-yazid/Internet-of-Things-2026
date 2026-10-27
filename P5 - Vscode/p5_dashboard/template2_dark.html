@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ENV-01 Monitor</title>
+    <style>
+      :root {
+        --bg: #0a0c10;
+        --panel: #10141a;
+        --line: #232b36;
+        --ice: #8fd3ff;
+        --amber: #ffc266;
+        --text: #d9dfe8;
+        --dim: #5b6675;
+        --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family: var(--mono);
+        background-color: var(--bg);
+        background-image:
+          linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 48px 48px;
+        background-position: -1px -1px;
+      }
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(
+          circle at 50% 40%,
+          transparent 30%,
+          var(--bg) 85%
+        );
+      }
+      .frame {
+        position: relative;
+        z-index: 1;
+        max-width: 1020px;
+        margin: 0 auto;
+        padding: 28px 24px 24px;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+      }
+      header b {
+        color: var(--ice);
+        margin-right: 12px;
+      }
+      header span.sub {
+        color: var(--dim);
+        text-transform: uppercase;
+      }
+      .hdr-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--dim);
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--dim);
+      }
+      .dot.ok {
+        background: var(--ice);
+        box-shadow: 0 0 8px var(--ice);
+      }
+      .dot.bad {
+        background: #ff6b5c;
+        box-shadow: 0 0 8px #ff6b5c;
+      }
+
+      main {
+        display: grid;
+        gap: 16px;
+        margin-top: 20px;
+        grid-template-columns: 1.25fr 1fr;
+        grid-template-areas: "g h" "g c";
+      }
+      @media (max-width: 760px) {
+        main {
+          grid-template-columns: 1fr;
+          grid-template-areas: "g" "h" "c";
+        }
+      }
+      .panel {
+        position: relative;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        padding: 20px;
+      }
+      .panel::before,
+      .panel::after {
+        content: "";
+        position: absolute;
+        width: 9px;
+        height: 9px;
+        border: 1px solid var(--ice);
+      }
+      .panel::before {
+        top: -1px;
+        left: -1px;
+        border-right: 0;
+        border-bottom: 0;
+      }
+      .panel::after {
+        bottom: -1px;
+        right: -1px;
+        border-left: 0;
+        border-top: 0;
+      }
+      .tag {
+        font-size: 0.68rem;
+        letter-spacing: 0.24em;
+        color: var(--dim);
+      }
+
+      .gauge {
+        grid-area: g;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .dial {
+        position: relative;
+        width: 100%;
+        max-width: 380px;
+        margin-top: 8px;
+      }
+      .dial svg {
+        width: 100%;
+        display: block;
+      }
+      .track {
+        fill: none;
+        stroke: var(--line);
+        stroke-width: 10;
+        stroke-dasharray: 433.54 578.05;
+      }
+      #arc {
+        fill: none;
+        stroke: var(--ice);
+        stroke-width: 10;
+        stroke-dasharray: 0 578.05;
+        transition:
+          stroke-dasharray 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+          stroke 0.4s;
+        filter: drop-shadow(0 0 6px rgba(143, 211, 255, 0.5));
+      }
+      .tick {
+        stroke: var(--dim);
+        stroke-width: 1;
+      }
+      .tick.major {
+        stroke: var(--text);
+        stroke-width: 1.6;
+      }
+      .tlabel {
+        fill: var(--dim);
+        font: 9px var(--mono);
+        text-anchor: middle;
+        dominant-baseline: middle;
+      }
+      .readout {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .readout .v {
+        font-size: clamp(3.4rem, 10vw, 5rem);
+        line-height: 1;
+        font-weight: 300;
+      }
+      .readout small {
+        font-size: 1.1rem;
+        color: var(--ice);
+        margin-left: 4px;
+      }
+      .readout .u {
+        font-size: 0.68rem;
+        letter-spacing: 0.3em;
+        color: var(--dim);
+        margin-top: 8px;
+      }
+
+      .humid {
+        grid-area: h;
+      }
+      .hnum {
+        font-size: 2.6rem;
+        font-weight: 300;
+        margin: 10px 0 14px;
+      }
+      .hnum small {
+        font-size: 0.8rem;
+        color: var(--dim);
+        margin-left: 6px;
+        letter-spacing: 0.1em;
+      }
+      .segs {
+        display: grid;
+        grid-template-columns: repeat(20, 1fr);
+        gap: 3px;
+        height: 26px;
+      }
+      .segs span {
+        background: var(--line);
+        transition:
+          background 0.3s,
+          box-shadow 0.3s;
+      }
+      .segs span.on {
+        background: var(--ice);
+        box-shadow: 0 0 6px rgba(143, 211, 255, 0.45);
+      }
+
+      .ctrl {
+        grid-area: c;
+      }
+      .ctrl .state {
+        font-size: 1.5rem;
+        margin: 12px 0 16px;
+        letter-spacing: 0.12em;
+      }
+      .plate {
+        width: 100%;
+        height: 56px;
+        padding: 6px;
+        background: #080a0d;
+        border: 1px solid var(--line);
+        cursor: pointer;
+        position: relative;
+      }
+      .knob {
+        display: block;
+        width: 50%;
+        height: 100%;
+        background: #1a212b;
+        border: 1px solid var(--dim);
+        transition:
+          transform 0.25s,
+          background 0.25s,
+          box-shadow 0.25s;
+      }
+      .plate.on .knob {
+        transform: translateX(100%);
+        background: var(--amber);
+        border-color: var(--amber);
+        box-shadow: 0 0 22px rgba(255, 194, 102, 0.55);
+      }
+      .plate::after {
+        content: "OFF            ON";
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        letter-spacing: 0.3em;
+        color: var(--dim);
+        white-space: pre;
+        pointer-events: none;
+        mix-blend-mode: difference;
+      }
+      .ctrl.on .state {
+        color: var(--amber);
+        text-shadow: 0 0 14px rgba(255, 194, 102, 0.5);
+      }
+
+      footer {
+        margin-top: 18px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.68rem;
+        letter-spacing: 0.14em;
+        color: var(--dim);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <header>
+        <div><b>ENV-01</b><span class="sub">Environmental Monitor</span></div>
+        <div class="hdr-right">
+          <span id="clock">--:--:--</span><span class="dot" id="dot"></span
+          ><span id="status">LINKING</span>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel gauge" id="cardTemp">
+          <div class="tag">TEMPERATURE</div>
+          <div class="dial">
+            <svg viewBox="0 0 240 240">
+              <g id="ticks"></g>
+              <circle
+                class="track"
+                cx="120"
+                cy="120"
+                r="92"
+                transform="rotate(135 120 120)"
+              />
+              <circle
+                id="arc"
+                cx="120"
+                cy="120"
+                r="92"
+                transform="rotate(135 120 120)"
+              />
+            </svg>
+            <div class="readout">
+              <div class="v"><span id="temp">--</span><small>°C</small></div>
+              <div class="u">CELSIUS</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel humid">
+          <div class="tag">HUMIDITY</div>
+          <div class="hnum"><span id="hum">--</span><small>%RH</small></div>
+          <div class="segs" id="segs"></div>
+        </section>
+
+        <section class="panel ctrl" id="ctrl">
+          <div class="tag">OUTPUT / LED</div>
+          <div class="state" id="ledText">--</div>
+          <button
+            class="plate"
+            id="btnLed"
+            onclick="toggleLed()"
+            aria-label="Saklar LED"
+          >
+            <span class="knob"></span>
+          </button>
+        </section>
+      </main>
+
+      <footer>
+        <span>ESP32 // DHT11</span
+        ><span>LAST SYNC <span id="updated">--:--:--</span></span>
+      </footer>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+      let ledOn = false;
+      const $ = (id) => document.getElementById(id);
+      const TEMP_MIN = 0,
+        TEMP_MAX = 50; // rentang gauge
+      const SWEEP = 433.54; // panjang busur 270 derajat
+
+      // Bangun skala tick dan segmen kelembapan sekali saja
+      (function build() {
+        let t = "";
+        for (let i = 0; i <= 25; i++) {
+          const a = ((135 + i * 10.8) * Math.PI) / 180,
+            major = i % 5 === 0;
+          const r1 = major ? 100 : 103,
+            r2 = 108;
+          t += `<line class="tick ${major ? "major" : ""}" x1="${120 + r1 * Math.cos(a)}" y1="${120 + r1 * Math.sin(a)}" x2="${120 + r2 * Math.cos(a)}" y2="${120 + r2 * Math.sin(a)}"/>`;
+          if (major)
+            t += `<text class="tlabel" x="${120 + 76 * Math.cos(a)}" y="${120 + 76 * Math.sin(a)}">${TEMP_MIN + ((TEMP_MAX - TEMP_MIN) * i) / 25}</text>`;
+        }
+        $("ticks").innerHTML = t;
+        $("segs").innerHTML = "<span></span>".repeat(20);
+        setInterval(
+          () =>
+            ($("clock").textContent = new Date().toLocaleTimeString("id-ID")),
+          1000,
+        );
+      })();
+
+      async function getSensor() {
+        try {
+          const res = await fetch(API_BASE + "/api/sensor");
+          const data = await res.json();
+          showData(data);
+          setStatus(true);
+        } catch (err) {
+          console.error(err);
+          setStatus(false);
+        }
+      }
+
+      async function setLed(state) {
+        try {
+          const res = await fetch(API_BASE + "/api/led?state=" + state);
+          const data = await res.json();
+          showData({ led: data.led });
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      function toggleLed() {
+        setLed(ledOn ? 0 : 1);
+      }
+
+      function setStatus(ok) {
+        $("dot").className = "dot " + (ok ? "ok" : "bad");
+        $("status").textContent = ok ? "ONLINE" : "OFFLINE - CEK IP / CONSOLE";
+        if (ok)
+          $("updated").textContent = new Date().toLocaleTimeString("id-ID");
+      }
+
+      function showData(d) {
+        if (d.temp !== undefined) {
+          $("temp").textContent = d.temp ?? "--";
+          if (d.temp !== null) {
+            const pct = Math.min(
+              Math.max((d.temp - TEMP_MIN) / (TEMP_MAX - TEMP_MIN), 0),
+              1,
+            );
+            $("arc").style.strokeDasharray = pct * SWEEP + " 578.05";
+          }
+        }
+        if (d.hum !== undefined) {
+          $("hum").textContent = d.hum ?? "--";
+          const lit = Math.round((d.hum ?? 0) / 5);
+          [...$("segs").children].forEach((s, i) =>
+            s.classList.toggle("on", i < lit),
+          );
+        }
+        if (d.led !== undefined) {
+          ledOn = d.led === 1;
+          $("ledText").textContent = ledOn ? "ACTIVE" : "STANDBY";
+          $("btnLed").classList.toggle("on", ledOn);
+          $("ctrl").classList.toggle("on", ledOn);
+        }
+      }
+
+      getSensor();
+      setInterval(getSensor, POLL_INTERVAL);
+    </script>
+  </body>
+</html>
