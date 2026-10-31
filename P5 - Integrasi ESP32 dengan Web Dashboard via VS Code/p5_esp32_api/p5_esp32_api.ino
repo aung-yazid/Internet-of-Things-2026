@@ -3,11 +3,11 @@
 #include <DHT.h>
 
 // Pengaturan WiFi
-const char* WIFI_SSID = "Redmi Note 14s";
-const char* WIFI_PASS = "aung1234";
+const char* WIFI_SSID = "Masukkan SSID WiFi";
+const char* WIFI_PASS = "Masukkan Password WiFi";
 
 // Tahap 1: false (lihat error CORS). Tahap 2: true, lalu upload ulang.
-const bool ENABLE_CORS = false;
+const bool ENABLE_CORS = true;
 
 // Pin Definition
 const int LED_PIN = 4;
